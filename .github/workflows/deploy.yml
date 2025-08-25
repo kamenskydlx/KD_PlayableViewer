@@ -35,9 +35,9 @@ jobs:
           }
           
           # Backup current deployment (if exists)
-          if [ -f docker-compose.yml ]; then
+          if [ -f docker compose.yml ]; then
             echo "Backing up current deployment..."
-            docker-compose down || true
+            docker compose down || true
           fi
           
           # Pull latest code
@@ -67,8 +67,8 @@ jobs:
           
           # Build and start services
           echo "Building and starting services..."
-          docker-compose down || true
-          docker-compose up -d --build
+          docker compose down || true
+          docker compose up -d --build
           
           # Cleanup old images
           echo "Cleaning up old Docker images..."
