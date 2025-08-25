@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: playable-viewer-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./uploads:/usr/share/nginx/html/uploads:ro
+      - frontend-build:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+    networks:
+      - playable-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: playable-viewer-backend
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-20971520}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./metadata.json:/app/metadata.json
+    restart: unless-stopped
+    networks:
+      - playable-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: playable-viewer-frontend
+    volumes:
+      - frontend-build:/app/build
+    networks:
+      - playable-network
+
+volumes:
+  frontend-build:
+
+networks:
+  playable-network:
+    driver: bridge

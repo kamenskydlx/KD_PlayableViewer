@@ -1,0 +1,98 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+
+    - name: Add server to known hosts
+      run: |
+        ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to server
+      run: |
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
+          # Navigate to project directory
+          cd /home/${{ secrets.SERVER_USER }}/playable-viewer || {
+            echo "Creating project directory..."
+            mkdir -p /home/${{ secrets.SERVER_USER }}/playable-viewer
+            cd /home/${{ secrets.SERVER_USER }}/playable-viewer
+          }
+          
+          # Backup current deployment (if exists)
+          if [ -f docker-compose.yml ]; then
+            echo "Backing up current deployment..."
+            docker-compose down || true
+          fi
+          
+          # Pull latest code
+          if [ -d .git ]; then
+            echo "Updating existing repository..."
+            git fetch origin
+            git reset --hard origin/main
+          else
+            echo "Cloning repository..."
+            git clone ${{ github.server_url }}/${{ github.repository }} .
+          fi
+          
+          # Copy environment file if it doesn't exist
+          if [ ! -f .env ]; then
+            echo "Creating .env file from example..."
+            cp .env.example .env
+            echo "⚠️  Please edit .env file with your credentials!"
+          fi
+          
+          # Create uploads directory if it doesn't exist
+          mkdir -p uploads
+          
+          # Initialize metadata.json if it doesn't exist
+          if [ ! -f metadata.json ]; then
+            echo '{"playables":{},"folders":[]}' > metadata.json
+          fi
+          
+          # Build and start services
+          echo "Building and starting services..."
+          docker-compose down || true
+          docker-compose up -d --build
+          
+          # Cleanup old images
+          echo "Cleaning up old Docker images..."
+          docker image prune -f || true
+          
+          echo "Deployment completed successfully!"
+          echo "Service is available at: http://${{ secrets.SERVER_HOST }}"
+        ENDSSH
+
+    - name: Verify deployment
+      run: |
+        sleep 30
+        echo "Checking if service is responding..."
+        curl -f http://${{ secrets.SERVER_HOST }}/health || {
+          echo "❌ Health check failed!"
+          exit 1
+        }
+        echo "✅ Deployment verification successful!"
+
+    - name: Notify deployment status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ Deployment to VPS completed successfully!"
+        else
+          echo "❌ Deployment failed!"
+        fi
