@@ -28,10 +28,10 @@ jobs:
       run: |
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
           # Navigate to project directory
-          cd /home/${{ secrets.SERVER_USER }}/playable-viewer || {
+          cd /root/playable-viewer || {
             echo "Creating project directory..."
-            mkdir -p /home/${{ secrets.SERVER_USER }}/playable-viewer
-            cd /home/${{ secrets.SERVER_USER }}/playable-viewer
+            mkdir -p /root/playable-viewer
+            cd /root/playable-viewer
           }
           
           # Backup current deployment (if exists)
