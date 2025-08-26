@@ -40,7 +40,7 @@ services:
       dockerfile: Dockerfile
     container_name: playable-viewer-frontend
     volumes:
-      - frontend-build:/usr/share/nginx/html
+      - frontend-build:/app/build
     networks:
       - playable-network
 

@@ -4,8 +4,8 @@ const { v4: uuidv4 } = require('uuid');
 
 class FileManager {
   constructor() {
-    this.uploadsDir = path.join(__dirname, '../../uploads');
-    this.metadataFile = path.join(__dirname, '../../metadata.json');
+    this.uploadsDir = '/app/uploads';
+    this.metadataFile = '/app/metadata.json';
   }
 
   // Ensure uploads directory exists

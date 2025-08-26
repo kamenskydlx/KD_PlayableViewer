@@ -32,9 +32,16 @@ router.post('/login', [
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
-  // For production, you should hash the password in environment
-  // For now, direct comparison (not recommended for production)
-  const isValidPassword = password === adminPassword;
+  // Check if the stored password is hashed or plain text
+  let isValidPassword;
+  if (adminPassword.startsWith('$2')) {
+    // Password is hashed with bcrypt
+    isValidPassword = await bcrypt.compare(password, adminPassword);
+  } else {
+    // Fallback to plain text comparison (not recommended)
+    console.warn('⚠️  Using plain text password. Consider using hashed passwords in production.');
+    isValidPassword = password === adminPassword;
+  }
   
   if (!isValidPassword) {
     return res.status(401).json({ error: 'Invalid credentials' });

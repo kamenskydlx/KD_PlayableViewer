@@ -10,7 +10,7 @@ const authRoutes = require('./routes/auth');
 const playableRoutes = require('./routes/playables');
 const publicRoutes = require('./routes/public');
 const { errorHandler } = require('./middleware/errorHandler');
-const rateLimiter = require('./middleware/rateLimiter');
+const { rateLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -49,6 +49,9 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // Rate limiting
 app.use('/api/', rateLimiter);
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static('/app/uploads'));
 
 // Health check
 app.get('/health', (req, res) => {
